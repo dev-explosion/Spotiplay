@@ -4,7 +4,7 @@
 __Spotiplay__ is a software which you can run your playlist in a loop on as many servers as you want,
 Each instance is created on different servers so you don't have to worry about blocking problems.
 
-![Screenshot](spotiplayadmin.gif)
+[![Screenshot](spotiplayadmin.gif)](https://dev-explosion.github.io/Spotiplay/admin)
 
 ## Benefits
 ___
@@ -25,7 +25,7 @@ ___
 We deploy a service for each account, in our service we have a graphic interface to make certain functionalities.
 As a user you can interact with these features through each server panel and see their responses in real time on the console screen.
 
-![stats](card.png)
+[![stats](card.png)](https://dev-explosion.github.io/Spotiplay/admin)
 
 __These features will allow you to__:
 
@@ -43,11 +43,12 @@ __These features will allow you to__:
 ___
 __Spotiplay__ takes care of increasing your play statistics and improving the reach and visibility of your playlists with the right audience.
 
-![stats](test_6.png) ![stats2](stats_7.png)
-
+| ![stats](test_6.png) | ![stats2](stats_7.png) |
+|:---:|:---:|
 
 ## Getting Started
 ___
+##### [Spotiplay web site!](https://dev-explosion.github.io/Spotiplay/admin)
 
 #### What to do to connect
 
@@ -57,7 +58,7 @@ To connect you must buy a __Connection String__
 
 Is a string which allows to establish the connection to the different servers acquired by the user.
 
-__Contact us at Telegram to know more__ and ask for our test (connectionString)
+[__Contact us at Telegram to know more__ and ask for our test (connectionString)]((https://dev-explosion.github.io/Spotiplay/admin))
 
 ### ¡WARNINGS!
 ___
