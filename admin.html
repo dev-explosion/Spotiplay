@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A layout that shows a list of servers spotiPlay.">
+    <title>Admin &ndash; SpotiPlay &ndash; Money</title>
+    <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/pure-min.css">
+    <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/grids-responsive-min.css">
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+    <link rel="stylesheet" href="https://icono-49d6.kxcdn.com/icono.min.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./console.css">
+    <link rel="stylesheet" href="./buttons.css">
+
+    <script type="text/javascript" src="https://cdn.rawgit.com/ricmoo/aes-js/e27b99df/index.js"></script>
+</head>
+<body>
+
+<div id="layout" class="pure-g">
+    <div class="sidebar pure-u-1 pure-u-md-1-4">
+        <div class="header">
+            <h1 class="brand-title">Spoti Play</h1>
+            <h2 class="text-black brand-tagline">Generate streams in your playlists</h2>
+
+            <form class="pure-form" id="form-generator">
+                <fieldset class="pure-group">
+                    <textarea class="xl pure-input-1-1" id="generator" placeholder="Place your ConnectionString"></textarea>
+                </fieldset>
+                <button type="submit" class="xl button-large pure-button pure-button-secondary">Generate</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="content pure-u-1 pure-u-md-3-4">
+        <div id="servers"> 
+        </div> 
+    </div>
+</div>
+<script>
+
+    var urlServers = [
+        'http://localhost:8000'
+    ];
+
+    function decryptedStringConnection(key, connection_string) {
+        // Decrypted Connection string based on key and connection string args
+        let encryptedBytes = aesjs.utils.hex.toBytes(connection_string);
+        var aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5));
+        var decryptedBytes = aesCtr.decrypt(encryptedBytes);
+        var decryptedText = aesjs.utils.utf8.fromBytes(decryptedBytes);
+        return decryptedText;
+    }
+
+    function setServers(connection_string_full) {
+        console.log(connection_string_full);
+        if (connection_string_full.trim() != ""){
+            var st = connection_string_full.split('?');
+            console.log(st)
+            st[1] = st[1].split("");
+            st[1] = new Uint8Array(st[1]);
+            let decrypted_string = decryptedStringConnection(st[1], st[0]);
+            console.log(decrypted_string);
+            let ip_list = decrypted_string.split(":-:")[0].split(",");
+            ip_list = ip_list.filter(i => i !== "-")
+            ip_list = ip_list.filter(i => i !== "")
+            console.log(ip_list)
+            // set servers to array
+            urlServers = ip_list;
+        }
+    }
+
+    var form_generator = document.getElementById('form-generator');
+
+    form_generator.addEventListener('submit', function(event){
+        event.preventDefault();
+        var connection_string = this.getElementsByTagName("textarea")[0].value;
+        setServers(connection_string);
+        // function create cards servers
+
+    })
+
+    //var apiUrl = "http://localhost:8000";
+
+    async function httpData(url = '', method = 'GET', data = null, headers = { 'Content-Type': 'application/json' }) {
+        console.log(data)
+    // Opciones por defecto estan marcadas con un *
+        const response = await fetch(url, {
+          method: method, // *GET, POST, PUT, DELETE, etc.
+          mode: 'cors', // no-cors, *cors, same-origin
+          cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+          credentials: 'same-origin', // include, *same-origin, omit
+          headers: headers,
+          redirect: 'follow', // manual, *follow, error
+          referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+          body: (data == null)? null : JSON.stringify(data)
+        });
+        if (headers["Content-Type"] == 'application/json')
+            return response.json(); // parses JSON response into native JavaScript objects
+        else
+            return response;
+    }
+
+    var stringToHTML = function (str) {
+	    var parser = new DOMParser();
+	    var doc = parser.parseFromString(str, 'text/html');
+	    return doc.body;
+    };
+
+    function card(count) 
+    {
+        return (
+            `<div class="servers card container">
+                <h1 class="content-subhead"><b>Server ${count}</b></h1>
+                    <section class="server">
+                        <header class="server-header pure-g">
+                            <div class="pure-u-1 pure-u-md-2-3">
+                                <form class="pure-form">
+                                    <fieldset>
+                                        <legend><strong>Account:</strong> <span id="current-account-${count}">Not Account</span></legend>
+
+                                        <div class="pure-g">
+                                            <div class="pure-u-1 pure-u-md-1-3">
+                                                <input class="xl" type="email" placeholder="Email" id="email-${count}"/>
+                                            </div>
+                                            <div class="pure-u-1 pure-u-md-1-3">
+                                                <input class="xl" type="password" placeholder="Password" id="pass-${count}"/>
+                                            </div>
+                                            <div class="pure-u-1 pure-u-md-1-3">
+                                                <input class="xl" type="text" placeholder="PlayList" id="plist-${count}" />
+                                            </div>
+                                        </div>
+                                    <br>
+                                    <button type="submit" class="xl pure-button button-success" id="b-run-${count}">Run</button>
+                                </fieldset>
+                            </form>
+                        </div>
+
+                        <div class="pure-u-1 pure-u-md-1-3 center p-t-40">
+                            <a class="button-success pure-button" id="b-change-account-${count}">Change Account</a>
+                            <br>
+                            <br>
+                            <a class="button-purpple pure-button" id="b-change-playlist-${count}">Change PlayList</a>
+                        </div>
+                    </header>
+
+                    <div class="">
+                        <hr>
+                        <div class="inline">
+                            status
+                            <button id="b-status-${count}" class="button-secondary pure-button button-circle">
+                                <i class="text-black icono-reset resize-icon"></i>
+                            </button>
+                        </div>
+
+                        <span id="panel-status-${count}">
+                            Not Login    
+                        </span>
+                        <hr>
+                    </div>
+            
+                    <div class="server-description pure-g center">
+                        <div class="pure-u-1 pure-u-md-1-2 p-24">
+                            <div class="pure-g">
+                                <div class="pure-u-1 pure-u-md-1-2"> <a id="b-rerun-${count}" class="button-success button-80 pure-button">Re-Run</a> </div>
+                                <div class="pure-u-1 pure-u-md-1-2"> <a id="b-play-${count}" class="button-warning button-80 pure-button">Play</a> </div>
+                            </div>
+                            <br>
+                            <div class="pure-g">
+                                <div class="pure-u-1 pure-u-md-1-2"> <a id="b-repeat-${count}" class="button-warning button-80 pure-button">Repeat</a> </div>
+                                <div class="pure-u-1 pure-u-md-1-2"> <a id="b-next-${count}" class="button-warning button-80 pure-button">Next Song</a> </div>
+                            </div>
+                            <br>
+                            <div class="pure-g">
+                                <div class="pure-u-1 pure-u-md-1-2"> <a id="b-close-${count}" class="button-error button-80 pure-button">Close Account</a> </div>
+                                <div class="pure-u-1 pure-u-md-1-2"> <a id="b-destroy-${count}" class="button-error button-80 pure-button">Destroy Driver</a> </div>
+                            </div>
+                            <br>
+                            <div class="pure-g">
+                                <div class="pure-u-1 pure-u-md-1-1">
+                                    <a id="b-screen-${count}" class="xl button-secondary pure-button">screenshot</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pure-u-1 pure-u-md-1-2 bg-black left">
+                            <div class="console">
+                                <div class="output">
+                                    <span>SpotiPlay</span><br/>
+                                    <span class="seperator">== == == == == == == == == == == == == == == == == ==</span></br>
+
+                                    <span>Initializing...</span><br/>
+                                    <span class="green">0.0002ms ok!</span><br/>
+                                    <!--<span class="seperator">== == == == == == == == == == == == == == == == == ==</span></br>-->
+                                </div>
+                                <!--<div class="action">
+                                    <span>logs$ </span>
+                                    
+                                </div>-->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>`
+        );
+    }
+
+    function api(apiUrl) 
+    {
+        return {
+            //create driver post 
+            createDriver: async () => {
+                return httpData(`${apiUrl}/driver`, 'POST');
+            },
+            //remove driver delete
+            removeDriver: async () => {
+                return httpData(`${apiUrl}/driver`, 'DELETE');
+            },
+            //clean driver delete 
+            cleanDriver: async () => {
+                return httpData(`${apiUrl}/driver/clean`, 'DELETE');
+            },
+            //status account get
+            statusAccount: async () => {
+                return httpData(`${apiUrl}/spotify`, 'GET');
+            },
+            //re run put
+            reRun : async () => {
+                return httpData(`${apiUrl}/spotify`, 'PUT');
+            },
+            //run playlist post
+            runPlaylist: async (data) => {
+                return httpData(`${apiUrl}/spotify`, 'POST', data);
+            },
+            //close account delete
+            closeAccount: async () => {
+                return httpData(`${apiUrl}/spotify`, 'DELETE');
+            },
+            //change playlist patch
+            changePlaylist: async (playlist) => {
+                return httpData(`${apiUrl}/spotify?playlist=${playlist}`, 'PATCH');
+            },
+            //user account get
+            userAccount: async () => {
+                return httpData(`${apiUrl}/spotify/account`, 'GET');
+            },
+            //playbutton playlist put
+            playButton: async () => {
+                return httpData(`${apiUrl}/spotify/play`, 'PUT');
+            },
+            //repeat put
+            repeatButton: async () => {
+                return httpData(`${apiUrl}/spotify/repeat`, 'PUT');
+            },
+            //next get
+            nextButton: async () => {
+                return httpData(`${apiUrl}/spotify/next`, 'GET');
+            },
+            //screenshot
+            screenshot: async () => {
+                return httpData(`${apiUrl}/screenshot`, 'GET', null, {'Content-Type': 'image/png'});
+            }
+        }
+    }
+
+    class Card {
+        constructor(apiUrl, index) {
+            this.apiUrl = apiUrl;
+            this.index = index;
+            this._api = new api(apiUrl);
+        }
+
+        async get_status()
+        {
+            var panel_status = document.getElementById(`panel-status-${this.index}`);
+            await this._api.statusAccount()
+            .then((response)=>{
+                // handler(response);
+                if ("error" in response)
+                {
+                    panel_status.innerHTML = response.error.message;
+                    panel_status.className = "bg-indianred"
+                } else {
+                    let data = response.data;
+                    let status_str = data.playlist + ' - ';
+                        status_str += data.song + ' - ';
+                        status_str += data.current_time + ' - ';
+                        status_str += data.full_time + ' - ';
+                        status_str += data.repeat + ' - ';
+                        status_str += data.status;
+
+                    panel_status.innerHTML = status_str;
+                    
+                    if (data.status == "Playing")
+                        panel_status.className = "bg-green"
+                    if (data.status == "Paused")
+                        panel_status.className = "bg-orange"
+                }
+            })
+        //.reject((error)=>{console.log(error)})
+        }
+
+        
+        async  post_driver()
+        {
+            await this._api.createDriver()
+            .then(handler);
+        }
+
+        async put_rerun()
+        {
+            await this._api.reRun()
+            .then(handler);
+        }
+
+        async post_run(index)
+        {
+            let a = document.getElementById(`email-${index}`).value;
+            let p = document.getElementById(`pass-${index}`).value;
+            let pl = document.getElementById(`plist-${index}`).value;
+            let data = {
+                "email": a,
+                "password": p,
+                "playlist": pl
+            };
+            await this._api.runPlaylist(data)
+            .then(handler);
+        }
+
+        async get_account()
+        {
+            var current_account = document.getElementById(`current-account-${this.index}`);
+            await this._api.userAccount()
+            .then((response)=>{
+                if ("error" in response)
+                    current_account.innerHTML = response.error.message;
+                else {
+                    current_account.innerHTML = response.email;
+                }
+            });
+        }
+
+        async change_account()
+        {
+
+        }
+
+        async change_playlist()
+        {
+
+        }
+
+        async put_play()
+        {
+            await this._api.playButton()
+            .then(handler);
+        }
+
+        async put_repeat()
+        {
+            await this._api.repeatButton()
+            .then(handler);
+        }
+
+        async put_next()
+        {
+            await this._api.nextButton()
+            .then(handler);
+        }
+
+        async delete_close()
+        {
+            await this._api.closeAccount()
+            .then(handler);
+        }
+        
+        async delete_destroy()
+        {
+            await this._api.removeDriver()
+            .then(handler);
+        }
+
+        async get_screenshot()
+        {
+            await  this._api.screenshot()
+            .then(response => response.blob())
+            .then(images => {
+                var outside = URL.createObjectURL(images);
+                console.log(outside);
+                var win = window.open(outside, '_blank');
+                win.focus();
+            });
+            //.then((response)=>{
+            //    console.log(response);
+            //})
+        }
+    
+        event_buttons(index, card)
+        {
+            var button_run = document.getElementById(`b-run-${index}`);
+            var button_change_playlist = document.getElementById(`b-change-playlist-${index}`); 
+            var button_change_account = document.getElementById(`b-change-account-${index}`);
+            // element 
+            var button_status = document.getElementById(`b-status-${index}`);
+            var button_rerun = document.getElementById(`b-rerun-${index}`);
+            var button_play = document.getElementById(`b-play-${index}`);
+            var button_repeat = document.getElementById(`b-repeat-${index}`);
+            var button_next = document.getElementById(`b-next-${index}`);
+            var button_close = document.getElementById(`b-close-${index}`);
+            var button_destroy = document.getElementById(`b-destroy-${index}`);
+
+            var button_screen = document.getElementById(`b-screen-${index}`);
+            
+            button_run.addEventListener('click', async function(event){
+                event.preventDefault();
+                await card.post_run(index);
+                await card.get_account();
+            });
+
+            button_change_playlist.addEventListener('click', async function(){
+            });
+
+            button_change_account.addEventListener('click', async function(){
+            })
+
+            button_status.addEventListener('click', async function(){
+                await card.get_status();
+            })
+
+            button_rerun.addEventListener('click', async function(){
+                await card.post_driver();
+                await card.put_rerun();
+                await card.get_account();
+            })
+
+            button_play.addEventListener('click', async function(){
+                await card.put_play();
+            })
+
+            button_repeat.addEventListener('click', async function(){
+                await card.put_repeat();
+            })
+
+            button_next.addEventListener('click', async function(){
+                await card.put_next();
+            })
+
+            button_close.addEventListener('click', async function(){
+                await card.delete_close();
+            })
+
+            button_destroy.addEventListener('click', async function(){
+                await card.delete_destroy();
+            })
+
+            button_screen.addEventListener('click', async function(){
+                await card.get_screenshot();
+            })
+        }
+    };
+
+    // inject to console
+    function injectCommand(text, cssclass)
+    {
+        var element = document.createElement("span");
+        element.classList.add(cssclass);
+        element.innerHTML = text;
+        document.getElementsByClassName('output')[0].innerHTML = "";
+        document.getElementsByClassName('output')[0].append(element);
+        element = document.createElement("br");
+        document.getElementsByClassName('output')[0].append(element);
+        // <span class="green">0.0002ms ok!</span><br/>
+    }
+
+    function handler(response) {
+        console.log(response)
+        if ("error" in response)
+            injectCommand(response.error.message, "red");
+        else
+            injectCommand(response.message, "green");
+    }
+
+    window.onload = function() {
+      
+        var servers_div = document.getElementById('servers');
+        let cards = [];
+        
+        urlServers.forEach((url, index) => {
+            
+            servers_div.append(stringToHTML(card(index)));
+            cards.push(new Card(url, index));
+            
+            let serverCard = cards[index];
+            setInterval(async function(){
+                await serverCard.get_status();
+            }, 5000);
+            
+            serverCard.get_account();
+            serverCard.event_buttons(index, serverCard);
+        });
+        //get_account();
+        //event_buttons();
+    }
+</script>
+</body>
+</html>
