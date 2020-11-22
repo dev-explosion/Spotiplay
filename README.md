@@ -54,7 +54,7 @@ ___
 
 To connect you must buy a __Connection String__
 
-#### Que es un Connection String
+#### What is a Connection String
 
 Is a string which allows to establish the connection to the different servers acquired by the user.
 
