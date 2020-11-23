@@ -52,20 +52,37 @@
     }
 
     function setServers(connection_string_full) {
-        console.log(connection_string_full);
-        if (connection_string_full.trim() != ""){
+        if (connection_string_full.trim() != "")
+        {
             var st = connection_string_full.split('?');
-            console.log(st)
             st[1] = st[1].split("");
             st[1] = new Uint8Array(st[1]);
             let decrypted_string = decryptedStringConnection(st[1], st[0]);
-            console.log(decrypted_string);
             let ip_list = decrypted_string.split(":-:")[0].split(",");
             ip_list = ip_list.filter(i => i !== "-")
             ip_list = ip_list.filter(i => i !== "")
-            console.log(ip_list)
             // set servers to array
             urlServers = ip_list;
+
+            var servers_div = document.getElementById('servers');
+            servers_div.innerHTML = "";
+            let cards = [];
+        
+            urlServers.forEach((url, index) => {
+
+                servers_div.append(stringToHTML(card(index)));
+                cards.push(new Card(url, index));
+
+                let serverCard = cards[index];
+                setInterval(async function(){
+                    await serverCard.get_status();
+                }, 5000);
+
+                serverCard.get_account();
+                serverCard.event_buttons(index, serverCard);
+            });
+            // set connection string
+            localStorage.setItem('connectionString', connection_string_full);
         }
     }
 
@@ -79,11 +96,9 @@
 
     })
 
-    //var apiUrl = "http://localhost:8000";
-
     async function httpData(url = '', method = 'GET', data = null, headers = { 'Content-Type': 'application/json' }) {
-        console.log(data)
-    // Opciones por defecto estan marcadas con un *
+        // console.log(data)
+        // Opciones por defecto estan marcadas con un *
         const response = await fetch(url, {
           method: method, // *GET, POST, PUT, DELETE, etc.
           mode: 'cors', // no-cors, *cors, same-origin
@@ -274,7 +289,6 @@
             var panel_status = document.getElementById(`panel-status-${this.index}`);
             await this._api.statusAccount()
             .then((response)=>{
-                // handler(response);
                 if ("error" in response)
                 {
                     panel_status.innerHTML = response.error.message;
@@ -296,7 +310,6 @@
                         panel_status.className = "bg-orange"
                 }
             })
-        //.reject((error)=>{console.log(error)})
         }
 
         
@@ -385,13 +398,9 @@
             .then(response => response.blob())
             .then(images => {
                 var outside = URL.createObjectURL(images);
-                console.log(outside);
                 var win = window.open(outside, '_blank');
                 win.focus();
             });
-            //.then((response)=>{
-            //    console.log(response);
-            //})
         }
     
         event_buttons(index, card)
@@ -412,6 +421,7 @@
             
             button_run.addEventListener('click', async function(event){
                 event.preventDefault();
+                await card.post_driver();
                 await card.post_run(index);
                 await card.get_account();
             });
@@ -468,11 +478,10 @@
         document.getElementsByClassName('output')[0].append(element);
         element = document.createElement("br");
         document.getElementsByClassName('output')[0].append(element);
-        // <span class="green">0.0002ms ok!</span><br/>
     }
 
     function handler(response) {
-        console.log(response)
+        //console.log(response)
         if ("error" in response)
             injectCommand(response.error.message, "red");
         else
@@ -480,25 +489,13 @@
     }
 
     window.onload = function() {
-      
-        var servers_div = document.getElementById('servers');
-        let cards = [];
+        var strconnect = localStorage.getItem('connectionString');
         
-        urlServers.forEach((url, index) => {
-            
-            servers_div.append(stringToHTML(card(index)));
-            cards.push(new Card(url, index));
-            
-            let serverCard = cards[index];
-            setInterval(async function(){
-                await serverCard.get_status();
-            }, 5000);
-            
-            serverCard.get_account();
-            serverCard.event_buttons(index, serverCard);
-        });
-        //get_account();
-        //event_buttons();
+        if (strconnect != null)
+        {
+            setServers(strconnect);   
+        }
+
     }
 </script>
 </body>
